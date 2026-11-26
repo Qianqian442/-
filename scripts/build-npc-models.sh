@@ -15,7 +15,7 @@ npm run setup-assets
 # Each export is a complete, textured, full-body GLB with a game skeleton.
 npm run export -- --preset "The Security Guard" --detail low --formats glb --out "$OUT"
 npm run export -- --preset "The Schoolgirl" --detail low --formats glb --out "$OUT"
-npm run export -- --preset "The Female Executive" --detail low --formats glb --out "$OUT"
+npm run export -- --preset "The Gamer" --detail low --formats glb --out "$OUT"
 cat > "$WORK/grandmother.json" <<'JSON'
 {
   "name": "Grandmother",
@@ -41,6 +41,6 @@ npm run export -- --params "$WORK/grandmother.json" --detail low --formats glb -
 
 test -s "$OUT/The_Security_Guard.glb"
 test -s "$OUT/The_Schoolgirl.glb"
-test -s "$OUT/The_Female_Executive.glb"
+test -s "$OUT/The_Gamer.glb"
 test -s "$OUT/Grandmother.glb"
 ls -lh "$OUT"/*.glb

@@ -46,9 +46,9 @@ jobs:
           if 'xmlns:tools=' not in s:
               s = s.replace('<manifest ', '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1)
           import re
-          s = re.sub(r'\\s*<uses-permission android:name="android\\.permission\\.INTERNET"\\s*/>', '', s)
+          s = re.sub(r'\s*<uses-permission android:name="android\.permission\.INTERNET"\s*/>', '', s)
           marker = '<application'
-          removal = '<uses-permission android:name="android.permission.INTERNET" tools:node="remove" />\\n    '
+          removal = '<uses-permission android:name="android.permission.INTERNET" tools:node="remove" />\n    '
           if marker not in s:
               raise SystemExit("Android manifest has no application element")
           s = s.replace(marker, removal + marker, 1)

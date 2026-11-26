@@ -1,0 +1,11 @@
+{
+  "appId": "com.qianqian.midnightecho404",
+  "appName": "午夜回声：404",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

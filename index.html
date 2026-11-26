@@ -9,14 +9,14 @@
 #intro h1{font-size:clamp(34px,8vw,68px);letter-spacing:8px;margin:0 0 12px;text-shadow:0 0 24px #9b2438}#intro p{color:#aaa;letter-spacing:4px}button{border:1px solid #9d5360;background:#24151a;color:#f4dfe3;padding:13px 24px;border-radius:4px;font-size:16px;margin:8px;cursor:pointer}button:active{background:#542631}
 #hud{position:fixed;inset:0;pointer-events:none;z-index:2;display:none}.top{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;color:#ddd;text-shadow:0 2px 8px #000;font-size:13px}.objective{position:absolute;top:55px;left:16px;max-width:80%;color:#d9c7c9;font-size:14px;text-shadow:0 2px 8px #000}.cross{position:absolute;left:50%;top:50%;width:12px;height:12px;transform:translate(-50%,-50%);border:1px solid #ddd;border-radius:50%;opacity:.8}.hint{position:absolute;bottom:18%;left:50%;transform:translateX(-50%);background:#090a0ccc;padding:10px 15px;border:1px solid #70515a;color:#f1dfe2;white-space:nowrap;font-size:13px}
 #controls{position:fixed;bottom:20px;left:16px;right:16px;z-index:3;display:none;justify-content:space-between;align-items:end;pointer-events:none}.pad{display:grid;grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px 48px;gap:4px;pointer-events:auto}.pad button,.act{margin:0;padding:0;width:48px;height:48px;background:#101217bb;border:1px solid #7778;color:#fff;border-radius:50%;touch-action:none}.pad .up{grid-column:2}.pad .left{grid-column:1;grid-row:2}.pad .down{grid-column:2;grid-row:2}.pad .right{grid-column:3;grid-row:2}.act{width:64px;height:64px;border-radius:50%;pointer-events:auto}
-#dialog{position:fixed;z-index:4;left:8%;right:8%;bottom:24%;display:none;padding:18px;background:#090a0fee;border:1px solid #77515a;text-align:center;line-height:1.7}
+.storyChoice{display:inline-block;margin:8px 4px 0;padding:9px 12px;font-size:13px}#dialog{position:fixed;z-index:4;left:8%;right:8%;bottom:24%;display:none;padding:18px;background:#090a0fee;border:1px solid #77515a;text-align:center;line-height:1.7}
 #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:6;transition:opacity 1.8s}
 .small{font-size:12px;color:#888;max-width:540px;line-height:1.8}
 </style>
 </head>
 <body>
 <div id="intro"><h1>千千制作</h1><p>一个关于回声的故事</p><button id="closeIntro">进入游戏</button><div class="small">本作含有昏暗环境与轻微惊吓，不含血腥画面。</div></div>
-<div id="menu" style="display:none"><h1>午夜回声：404</h1><p>凌晨 00:04 · 旧居民楼</p><button id="start">开始探索</button><div class="small">WASD / 方向键移动 · 鼠标转向 · E 互动<br>手机：屏幕左侧方向键移动，右侧按钮互动</div><p class="small">建议佩戴耳机体验原创氛围音乐。</p></div>
+<div id="menu" style="display:none"><h1>午夜回声：404</h1><p>凌晨 00:04 · 旧居民楼</p><button id="start">开始探索</button><div class="small">WASD / 方向键移动 · 鼠标转向 · E 互动<br>手机：屏幕左侧方向键移动，右侧按钮互动</div><p class="small">建议佩戴耳机。背景音乐参考 Pixabay「Horror Ambience」，可在音乐页面查看授权与下载。</p><a href="https://pixabay.com/music/horror-scene-horror-ambience-569511/" target="_blank" rel="noopener" style="color:#c9aeb4;font-size:12px">查看背景音乐来源与授权</a></div>
 <div id="hud"><div class="top"><span>午夜回声：404</span><span id="clock">00:04</span></div><div class="objective" id="objective">目标：找到通往四楼的楼梯</div><div class="cross"></div><div class="hint" id="hint">探索走廊，靠近可疑物品后按 E 互动</div></div>
 <div id="controls"><div class="pad"><button class="up" data-move="forward">▲</button><button class="left" data-move="left">◀</button><button class="down" data-move="back">▼</button><button class="right" data-move="right">▶</button></div><button class="act" id="touchAct">互动</button></div>
 <div id="dialog"></div><div id="ending" style="display:none"><h1>门后有人</h1><p>你终于听见了自己的声音。</p><p class="small">第一章 · 完</p><button onclick="location.reload()">重新开始</button></div><div id="fade"></div>
@@ -54,9 +54,66 @@ function closeDialog(){$('dialog').style.display='none';dialogOpen=false}
 function interact(){if(dialogOpen){closeDialog();return}if(!near){$('hint').textContent='这里暂时没有可以互动的东西';return}const d=near.userData;if(d.kind==='door'){if(!hasKey){showDialog('门锁着。门后传来三下轻轻的敲门声。');return}$('fade').style.opacity='1';setTimeout(()=>{$('ending').style.display='flex';$('fade').style.opacity='0'},1800);return}if(d.kind==='key'){hasKey=true;scene.remove(near);interactables.splice(interactables.indexOf(near),1);$('objective').textContent='目标：调查墙上的留言，找到 404 房间';showDialog('你捡起了钥匙。钥匙牌背面刻着一行小字：它一直在等你。')}else if(d.kind==='note'){readNote=true;showDialog(d.desc)}else showDialog(d.desc)}
 function update(dt){if(!started||dialogOpen)return;const f=(keys.forward?1:0)-(keys.back?1:0),s=(keys.right?1:0)-(keys.left?1:0);const speed=3.1*dt;player.x+=Math.sin(player.yaw)*f*speed+Math.cos(player.yaw)*s*speed;player.z+=-Math.cos(player.yaw)*f*speed+Math.sin(player.yaw)*s*speed;player.x=THREE.MathUtils.clamp(player.x,-2,2);player.z=THREE.MathUtils.clamp(player.z,-24,7);camera.position.set(player.x,1.62,player.z);camera.rotation.set(0,player.yaw,0,'YXZ');near=null;let best=2.0;for(const o of interactables){const d=Math.hypot(o.position.x-player.x,o.position.z-player.z);if(d<best){best=d;near=o}}if(Math.hypot(player.x,player.z+23)<2.1){near={userData:{name:'404房门',kind:'door'}}}if(near){$('hint').textContent='靠近：'+near.userData.name+' · 按 E / 互动'}else $('hint').textContent='探索走廊，留意周围的声音';if(player.z< -20&&hasKey){$('objective').textContent='目标：打开 404 房间';}if(player.z< -21.5&&!hasKey){player.z=-21.5;$('objective').textContent='门锁着。先找到钥匙。'}}
 let prev=0;function loop(t){requestAnimationFrame(loop);const dt=Math.min((t-prev)/1000,.04);prev=t;if(started)update(dt);if(started){const pulse=.88+Math.sin(t*.002)*.12;scene.children.forEach(o=>{if(o.isPointLight&&o.position.y>2.5)o.intensity*=pulse})}renderer.render(scene,camera)}
-build();requestAnimationFrame(loop);
+build();addStoryNPCs();requestAnimationFrame(loop);
 $('closeIntro').onclick=()=>{$('intro').style.display='none';$('menu').style.display='flex'};
 $('start').onclick=()=>{$('menu').style.display='none';$('hud').style.display='block';$('controls').style.display='flex';started=true;music();if(innerWidth>700)renderer.domElement.requestPointerLock?.()};
+
+let story={grandma:false,guard:false,boy:false,photo:false,girl:false,guardHelp:false,endingChoice:''};
+function addStoryNPCs(){
+ function person(x,z,coat,skin,label,id){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,1.05,8),new THREE.MeshStandardMaterial({color:coat,roughness:1}));
+  body.position.y=.82;g.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.2,12,10),new THREE.MeshStandardMaterial({color:skin,roughness:1}));
+  head.position.y=1.48;g.add(head);
+  const hair=new THREE.Mesh(new THREE.SphereGeometry(.205,12,8,0,Math.PI*2,0,Math.PI*.58),new THREE.MeshStandardMaterial({color:0x171516}));
+  hair.position.y=1.55;g.add(hair);
+  g.position.set(x,0,z);scene.add(g);g.userData={kind:'npc',id,name:label};interactables.push(g);
+  const glow=new THREE.PointLight(0x8b8790,.22,2);glow.position.set(x,1.2,z);scene.add(glow);
+ }
+ person(1.35,1.1,0x514b48,0x8b7464,'楼下的老太太','grandma');
+ person(-1.35,-7.2,0x30383d,0x8a7668,'值班保安','guard');
+ person(1.3,-13.1,0x252a35,0x9a8273,'戴帽子的年轻人','boy');
+ person(-1.25,-19.2,0xe0d9d1,0xb59a8b,'走廊里的小女孩','girl');
+ addItem('旧照片','照片背面写着：妹妹，别再去四楼。',1.25,-15.2,'photo');
+}
+function storyDialog(html){const el=$('dialog');el.innerHTML=html;el.style.display='block';dialogOpen=true;}
+function storyChoice(label,action){return '<button class="storyChoice" data-choice="'+label+'">'+label+'</button>';}
+function finishChoice(fn){document.querySelectorAll('.storyChoice').forEach(b=>b.onclick=()=>{closeDialog();fn(b.dataset.choice)})}
+function interact(){
+ if(dialogOpen){closeDialog();return}
+ if(!near){$('hint').textContent='附近没有可以互动的对象';return}
+ const d=near.userData;
+ if(d.kind==='door'){
+  if(!hasKey){storyDialog('<b>404 房门</b><br>门锁着。门内传来三下敲门声。<br><small>咚……咚……咚……</small>');return}
+  if(!story.girl){storyDialog('门缝里传出小女孩的声音：“你还没有听完他们的故事。”<br>先找到那个女孩。');return}
+  $('fade').style.opacity='1';setTimeout(()=>{$('ending').style.display='flex';$('fade').style.opacity='0'},1800);return;
+ }
+ if(d.kind==='key'){hasKey=true;scene.remove(near);interactables.splice(interactables.indexOf(near),1);$('objective').textContent='目标：与老太太交谈，了解这栋楼的过去';storyDialog('你捡起了冰冷的钥匙。钥匙牌背面刻着：它一直在等你。');return}
+ if(d.kind==='note'){readNote=true;storyDialog('纸条写着：如果听见有人叫你的名字，不要回答。<br>下面还有一行被划掉的字：保安室的监控没有拍到四楼。');$('objective').textContent='目标：拿着线索去询问值班保安';return}
+ if(d.kind==='photo'){story.photo=true;scene.remove(near);interactables.splice(interactables.indexOf(near),1);storyDialog('你捡起一张旧照片。照片上的小女孩，和走廊尽头的身影一模一样。');$('objective').textContent='目标：把照片交给戴帽子的年轻人';return}
+ if(d.kind==='radio'){storyDialog('对讲机发出沙沙声。一个很轻的声音说：“不要相信……记得她的人。”');return}
+ if(d.kind==='npc'){
+  if(d.id==='grandma'){
+   if(!story.grandma){storyDialog('<b>老太太</b><br>“这么晚还上楼？这栋楼早就没人住了。”<br>你想问什么？'+storyChoice('问这栋楼的过去')+storyChoice('问404房间')+storyChoice('暂时离开'));finishChoice(q=>{if(q==='问这栋楼的过去'){story.grandma=true;storyDialog('“以前这里住着很多人。后来四楼出了事，大家都搬走了。奇怪的是……我从没住过四楼。”');$('objective').textContent='目标：寻找墙上的留言，调查保安室';}else if(q==='问404房间'){storyDialog('老太太忽然压低声音：“不要在门前喊自己的名字。门会记住。”');} });}
+   else storyDialog('老太太看着你手里的钥匙：“你已经听见敲门声了，对吗？别回应它。”');
+  } else if(d.id==='guard'){
+   if(!readNote){storyDialog('保安挡住你的去路：“住户区域不对外开放。别乱翻东西。”');return}
+   storyDialog('<b>值班保安</b><br>“监控？四楼根本没有摄像头。”他盯着你手里的纸条。'+storyChoice('出示纸条追问')+storyChoice('询问监控室')+storyChoice('离开'));
+   finishChoice(q=>{if(q==='出示纸条追问'){story.guard=true;story.guardHelp=true;storyDialog('保安沉默很久，递给你一张监控室通行卡：“我只看见过一次。那晚，电梯显示停在了不存在的楼层。”');$('objective').textContent='目标：找到戴帽子的年轻人，问问他在找谁';}else if(q==='询问监控室'){storyDialog('“监控室在地下室。但我劝你别看凌晨零点后的录像。”');}});
+  } else if(d.id==='boy'){
+   if(!story.boy){story.boy=true;storyDialog('<b>戴帽子的年轻人</b><br>“你也在找出口？我妹妹失踪了。有人说最后一次看见她，是在四楼。”');$('objective').textContent='目标：寻找旧照片，确认年轻人的妹妹';}
+   else if(story.photo){storyDialog('年轻人看到照片后脸色发白：“这是我妹妹……可这张照片是十年前拍的。”'+storyChoice('告诉他小女孩就在走廊')+storyChoice('暂时隐瞒'));
+    finishChoice(q=>{if(q==='告诉他小女孩就在走廊'){storyDialog('他后退了一步：“不可能。她已经……”话没说完，走廊灯全部熄灭了一秒。');story.boy=true;}else storyDialog('你把照片收了起来。年轻人没有再追问。');});}
+   else storyDialog('“如果你找到一张旧照片，请拿给我看看。”');
+  } else if(d.id==='girl'){
+   if(!story.photo){storyDialog('小女孩站在远处看着你。她没有说话，只指了指地上的照片。');return}
+   if(!story.girl){story.girl=true;storyDialog('<b>小女孩</b><br>“哥哥还记得我吗？这里不是四楼……这里是所有人忘记的那一天。”<br>她把一把生锈的钥匙放在地上。');$('objective').textContent='目标：返回404房间，打开那扇门';}
+   else storyDialog('“门后不是怪物。是你一直不敢想起来的那件事。”');
+  }
+ }
+}
+
 $('touchAct').onclick=interact;window.addEventListener('keydown',e=>{if(['w','ArrowUp'].includes(e.key))keys.forward=true;if(['s','ArrowDown'].includes(e.key))keys.back=true;if(['a','ArrowLeft'].includes(e.key))keys.left=true;if(['d','ArrowRight'].includes(e.key))keys.right=true;if(e.key.toLowerCase()==='e')interact()});window.addEventListener('keyup',e=>{if(['w','ArrowUp'].includes(e.key))keys.forward=false;if(['s','ArrowDown'].includes(e.key))keys.back=false;if(['a','ArrowLeft'].includes(e.key))keys.left=false;if(['d','ArrowRight'].includes(e.key))keys.right=false});
 document.querySelectorAll('[data-move]').forEach(b=>{const k=b.dataset.move;b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
 let dragging=false,lastX=0;renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'){dragging=true;lastX=e.clientX}});renderer.domElement.addEventListener('pointermove',e=>{if(document.pointerLockElement===renderer.domElement){player.yaw-=e.movementX*.0025}else if(dragging){player.yaw-=(e.clientX-lastX)*.008;lastX=e.clientX}});window.addEventListener('pointerup',()=>dragging=false);window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});

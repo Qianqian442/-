@@ -37,6 +37,24 @@ jobs:
         run: npm run build
       - name: Generate Android project
         run: npx cap add android
+      - name: Enforce offline-only Android permissions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/src/main/AndroidManifest.xml")
+          s = p.read_text()
+          if 'xmlns:tools=' not in s:
+              s = s.replace('<manifest ', '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1)
+          import re
+          s = re.sub(r'\\s*<uses-permission android:name="android\\.permission\\.INTERNET"\\s*/>', '', s)
+          marker = '<application'
+          removal = '<uses-permission android:name="android.permission.INTERNET" tools:node="remove" />\\n    '
+          if marker not in s:
+              raise SystemExit("Android manifest has no application element")
+          s = s.replace(marker, removal + marker, 1)
+          p.write_text(s)
+          print("Removed INTERNET permission from the final merged manifest.")
+          PY
       - name: Sync Android project
         run: npx cap sync android
       - name: Build debug APK

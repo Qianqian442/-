@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'scripts/build-npc-models.sh'
       - 'package.json'
       - 'capacitor.config.json'
       - '.github/workflows/android.yml'
@@ -23,6 +24,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Generate realistic full-body NPC models
+        run: bash scripts/build-npc-models.sh
       - name: Setup Java
         uses: actions/setup-java@v4
         with:

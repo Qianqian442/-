@@ -37,6 +37,20 @@ jobs:
         run: npm run build
       - name: Generate Android project
         run: npx cap add android
+      - name: Force landscape game orientation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path("android/app/src/main/AndroidManifest.xml")
+          s = p.read_text()
+          pattern = r'(<activity\\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*)(>)'
+          s2, count = re.subn(pattern, r'\\1 android:screenOrientation="landscape"\\2', s, count=1)
+          if count != 1:
+              raise SystemExit("Could not find the MainActivity declaration to lock landscape orientation")
+          p.write_text(s2)
+          print("MainActivity locked to landscape orientation.")
+          PY
       - name: Enforce offline-only Android permissions
         run: |
           python3 - <<'PY'

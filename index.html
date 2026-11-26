@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>午夜回声：404 · 千千制作</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050608;color:#eee;font-family:system-ui,"Microsoft YaHei",sans-serif}canvas{display:block}
+#intro,#menu,#ending{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(ellipse at center,#202329 0,#08090c 65%,#020304 100%);text-align:center;padding:24px}
+#intro h1{font-size:clamp(34px,8vw,68px);letter-spacing:8px;margin:0 0 12px;text-shadow:0 0 24px #9b2438}#intro p{color:#aaa;letter-spacing:4px}button{border:1px solid #9d5360;background:#24151a;color:#f4dfe3;padding:13px 24px;border-radius:4px;font-size:16px;margin:8px;cursor:pointer}button:active{background:#542631}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:2;display:none}.top{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;color:#ddd;text-shadow:0 2px 8px #000;font-size:13px}.objective{position:absolute;top:55px;left:16px;max-width:80%;color:#d9c7c9;font-size:14px;text-shadow:0 2px 8px #000}.cross{position:absolute;left:50%;top:50%;width:12px;height:12px;transform:translate(-50%,-50%);border:1px solid #ddd;border-radius:50%;opacity:.8}.hint{position:absolute;bottom:18%;left:50%;transform:translateX(-50%);background:#090a0ccc;padding:10px 15px;border:1px solid #70515a;color:#f1dfe2;white-space:nowrap;font-size:13px}
+#controls{position:fixed;bottom:20px;left:16px;right:16px;z-index:3;display:none;justify-content:space-between;align-items:end;pointer-events:none}.pad{display:grid;grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px 48px;gap:4px;pointer-events:auto}.pad button,.act{margin:0;padding:0;width:48px;height:48px;background:#101217bb;border:1px solid #7778;color:#fff;border-radius:50%;touch-action:none}.pad .up{grid-column:2}.pad .left{grid-column:1;grid-row:2}.pad .down{grid-column:2;grid-row:2}.pad .right{grid-column:3;grid-row:2}.act{width:64px;height:64px;border-radius:50%;pointer-events:auto}
+#dialog{position:fixed;z-index:4;left:8%;right:8%;bottom:24%;display:none;padding:18px;background:#090a0fee;border:1px solid #77515a;text-align:center;line-height:1.7}
+#fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:6;transition:opacity 1.8s}
+.small{font-size:12px;color:#888;max-width:540px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="intro"><h1>千千制作</h1><p>一个关于回声的故事</p><button id="closeIntro">进入游戏</button><div class="small">本作含有昏暗环境与轻微惊吓，不含血腥画面。</div></div>
+<div id="menu" style="display:none"><h1>午夜回声：404</h1><p>凌晨 00:04 · 旧居民楼</p><button id="start">开始探索</button><div class="small">WASD / 方向键移动 · 鼠标转向 · E 互动<br>手机：屏幕左侧方向键移动，右侧按钮互动</div><p class="small">建议佩戴耳机体验原创氛围音乐。</p></div>
+<div id="hud"><div class="top"><span>午夜回声：404</span><span id="clock">00:04</span></div><div class="objective" id="objective">目标：找到通往四楼的楼梯</div><div class="cross"></div><div class="hint" id="hint">探索走廊，靠近可疑物品后按 E 互动</div></div>
+<div id="controls"><div class="pad"><button class="up" data-move="forward">▲</button><button class="left" data-move="left">◀</button><button class="down" data-move="back">▼</button><button class="right" data-move="right">▶</button></div><button class="act" id="touchAct">互动</button></div>
+<div id="dialog"></div><div id="ending" style="display:none"><h1>门后有人</h1><p>你终于听见了自己的声音。</p><p class="small">第一章 · 完</p><button onclick="location.reload()">重新开始</button></div><div id="fade"></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const $=id=>document.getElementById(id);
+let scene,camera,renderer,player={x:0,z:5,yaw:0},keys={},started=false,hasKey=false,readNote=false,near=null,dialogOpen=false,walk=0;
+const interactables=[];
+function box(w,h,d,x,y,z,color,rough=.9){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:rough}));m.position.set(x,y,z);scene.add(m);return m}
+function textSprite(message){const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#eee';ctx.font='bold 54px sans-serif';ctx.fillText(message,18,78);const t=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true}));s.scale.set(2.8,.7,1);return s}
+function addItem(name,desc,x,z,kind){const o=box(.55,.75,.16,x,.45,z,kind==='key'?0xb99a50:0x373b42);o.userData={name,desc,kind};interactables.push(o);return o}
+function build(){
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x050609);scene.fog=new THREE.FogExp2(0x08090d,.055);
+ camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,80);camera.position.set(0,1.65,5);
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.toneMapping=THREE.ACESFilmicToneMapping;document.body.appendChild(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0x596070,0x090609,.35));
+ const lamp=new THREE.PointLight(0xb5c5e8,15,12);lamp.position.set(0,2.65,-2);scene.add(lamp);
+ const lamp2=new THREE.PointLight(0x9b3947,5,8);lamp2.position.set(0,2.2,-12);scene.add(lamp2);
+ // long apartment corridor
+ box(5,.2,34,0,-.12,-9,0x292a2e);box(5,.2,34,0,3.2,-9,0x17191e);
+ box(.18,3.2,34,-2.5,1.5,-9,0x343238);box(.18,3.2,34,2.5,1.5,-9,0x343238);
+ for(let z=6;z>-25;z-=4){box(5,.025,.04,0,.01,z,0x68605c);const l=new THREE.PointLight(0xc4c5b9,.7,5);l.position.set(0,2.9,z-1);scene.add(l);box(.45,.08,.18,0,3,z-1,0x9c9b8b)}
+ // doors and room numbers
+ for(let z=2;z>-24;z-=4){box(.08,2.25,1.3,-2.39,1.1,z,0x241e20);box(.08,2.25,1.3,2.39,1.1,z-2,0x241e20)}
+ const door=box(.12,2.45,1.45,0,1.2,-23,0x241519);door.userData.finalDoor=true;
+ const sign=textSprite('404');sign.position.set(0,2.25,-22.1);scene.add(sign);
+ addItem('掉落的钥匙','一把冰冷的旧钥匙。钥匙牌上写着：404。',-1.35,-3,'key');
+ addItem('墙上的留言','纸条写着：如果听见有人叫你的名字，不要回答。',1.25,-10,'note');
+ addItem('坏掉的对讲机','对讲机里传来一阵电流声……随后有人轻声说：“你来晚了。”',-1.25,-17,'radio');
+ const exit=textSprite('不要回头');exit.position.set(0,2.5,-18);scene.add(exit);
+}
+function music(){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;const ac=new AC();const master=ac.createGain();master.gain.value=.045;master.connect(ac.destination);const notes=[55,65.4,73.4,65.4,49,58.3,65.4,58.3];let i=0;function beat(){if(!started)return;const osc=ac.createOscillator(),g=ac.createGain();osc.type='sine';osc.frequency.value=notes[i++%notes.length];g.gain.setValueAtTime(.0001,ac.currentTime);g.gain.exponentialRampToValueAtTime(.35,ac.currentTime+.8);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+3.8);osc.connect(g);g.connect(master);osc.start();osc.stop(ac.currentTime+4);setTimeout(beat,2600)}beat();const noise=ac.createBufferSource();const b=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate);const data=b.getChannelData(0);for(let j=0;j<data.length;j++)data[j]=(Math.random()*2-1)*.13;noise.buffer=b;noise.loop=true;const filter=ac.createBiquadFilter();filter.type='lowpass';filter.frequency.value=170;const ng=ac.createGain();ng.gain.value=.13;noise.connect(filter);filter.connect(ng);ng.connect(master);noise.start()}
+function showDialog(t){$('dialog').textContent=t;$('dialog').style.display='block';dialogOpen=true}
+function closeDialog(){$('dialog').style.display='none';dialogOpen=false}
+function interact(){if(dialogOpen){closeDialog();return}if(!near){$('hint').textContent='这里暂时没有可以互动的东西';return}const d=near.userData;if(d.kind==='key'){hasKey=true;scene.remove(near);interactables.splice(interactables.indexOf(near),1);$('objective').textContent='目标：调查墙上的留言，找到 404 房间';showDialog('你捡起了钥匙。钥匙牌背面刻着一行小字：它一直在等你。')}else if(d.kind==='note'){readNote=true;showDialog(d.desc)}else showDialog(d.desc)}
+function update(dt){if(!started||dialogOpen)return;const f=(keys.forward?1:0)-(keys.back?1:0),s=(keys.right?1:0)-(keys.left?1:0);const speed=3.1*dt;player.x+=Math.sin(player.yaw)*f*speed+Math.cos(player.yaw)*s*speed;player.z+=-Math.cos(player.yaw)*f*speed+Math.sin(player.yaw)*s*speed;player.x=THREE.MathUtils.clamp(player.x,-2,2);player.z=THREE.MathUtils.clamp(player.z,-24,7);camera.position.set(player.x,1.62,player.z);camera.rotation.set(0,player.yaw,0,'YXZ');near=null;let best=2.0;for(const o of interactables){const d=Math.hypot(o.position.x-player.x,o.position.z-player.z);if(d<best){best=d;near=o}}if(Math.hypot(player.x,player.z+23)<2.1){near={userData:{name:'404房门',kind:'door'}}}if(near){$('hint').textContent='靠近：'+near.userData.name+' · 按 E / 互动'}else $('hint').textContent='探索走廊，留意周围的声音';if(player.z< -20&&hasKey){$('objective').textContent='目标：打开 404 房间';}if(player.z< -21.5&&!hasKey){player.z=-21.5;$('objective').textContent='门锁着。先找到钥匙。'}}
+let prev=0;function loop(t){requestAnimationFrame(loop);const dt=Math.min((t-prev)/1000,.04);prev=t;if(started)update(dt);if(started){const pulse=.88+Math.sin(t*.002)*.12;scene.children.forEach(o=>{if(o.isPointLight&&o.position.y>2.5)o.intensity*=pulse})}renderer.render(scene,camera)}
+build();requestAnimationFrame(loop);
+$('closeIntro').onclick=()=>{$('intro').style.display='none';$('menu').style.display='flex'};
+$('start').onclick=()=>{$('menu').style.display='none';$('hud').style.display='block';$('controls').style.display='flex';started=true;music();if(innerWidth>700)renderer.domElement.requestPointerLock?.()};
+$('touchAct').onclick=interact;window.addEventListener('keydown',e=>{if(['w','ArrowUp'].includes(e.key))keys.forward=true;if(['s','ArrowDown'].includes(e.key))keys.back=true;if(['a','ArrowLeft'].includes(e.key))keys.left=true;if(['d','ArrowRight'].includes(e.key))keys.right=true;if(e.key.toLowerCase()==='e')interact()});window.addEventListener('keyup',e=>{if(['w','ArrowUp'].includes(e.key))keys.forward=false;if(['s','ArrowDown'].includes(e.key))keys.back=false;if(['a','ArrowLeft'].includes(e.key))keys.left=false;if(['d','ArrowRight'].includes(e.key))keys.right=false});
+document.querySelectorAll('[data-move]').forEach(b=>{const k=b.dataset.move;b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+let dragging=false,lastX=0;renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'){dragging=true;lastX=e.clientX}});renderer.domElement.addEventListener('pointermove',e=>{if(document.pointerLockElement===renderer.domElement){player.yaw-=e.movementX*.0025}else if(dragging){player.yaw-=(e.clientX-lastX)*.008;lastX=e.clientX}});window.addEventListener('pointerup',()=>dragging=false);window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body></html>

@@ -21,7 +21,7 @@
 <div id="controls"><div class="pad"><button class="up" data-move="forward">▲</button><button class="left" data-move="left">◀</button><button class="down" data-move="back">▼</button><button class="right" data-move="right">▶</button></div><button class="act" id="touchAct">互动</button></div>
 <div id="dialog"></div><div id="ending" style="display:none"><h1>门后有人</h1><p>你终于听见了自己的声音。</p><p class="small">第一章 · 完</p><button onclick="location.reload()">重新开始</button></div><div id="fade"></div>
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from 'three';
 const $=id=>document.getElementById(id);
 let scene,camera,renderer,player={x:0,z:5,yaw:0},keys={},started=false,hasKey=false,readNote=false,near=null,dialogOpen=false,walk=0;
 const interactables=[];
